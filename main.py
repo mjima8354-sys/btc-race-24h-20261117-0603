@@ -9,6 +9,8 @@ breakeven adjustment, ATR trailing stop, time stop, and trade throttling
 Deterministic: standard library only, no clock, no environment, no randomness.
 """
 
+# tuning v2 (cooldown 70, z -1.8, trail 1.5)
+
 import os
 import sys
 
