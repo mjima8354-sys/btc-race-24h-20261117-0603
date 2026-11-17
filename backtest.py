@@ -188,8 +188,23 @@ def backtest(bars_path, bot_path, verbose=False):
     for eq in equity_curve:
         peak = max(peak, eq)
         mdd = max(mdd, (peak - eq) / peak)
-    print(f"bars={len(bars)} round_trips={wins} trades={trades} net_pnl={net/1e6:.2f} USDC  "
-          f"max_drawdown={mdd:.4%}  fees={fees_paid/1e6:.2f} USDC  end={account['cash']/1e6:.2f} USDC")
+    sells = sum(1 for e in log if e[1] == "SELL")
+    winrate = (wins / sells) if sells else 0.0
+    # Sharpe from per-bar equity returns (1m), annualised.
+    rets = []
+    for i in range(1, len(equity_curve)):
+        if equity_curve[i - 1] > 0:
+            rets.append((equity_curve[i] - equity_curve[i - 1]) / equity_curve[i - 1])
+    if len(rets) > 1:
+        import statistics
+        mr = statistics.fmean(rets)
+        sr = statistics.pstdev(rets)
+        sharpe = (mr / sr * (525600 ** 0.5)) if sr > 0 else 0.0
+    else:
+        sharpe = 0.0
+    print(f"bars={len(bars)} round_trips={wins}/{sells} trades={trades} net_pnl={net/1e6:.2f} USDC  "
+          f"winrate={winrate:.1%}  max_drawdown={mdd:.4%}  fees={fees_paid/1e6:.2f} USDC  "
+          f"end={account['cash']/1e6:.2f} USDC  sharpe={sharpe:.2f}")
     for e in log:
         print(f"  bar {e[0]:5d} {e[1]:4s} {e[2]:+.2f}")
     if verbose:
